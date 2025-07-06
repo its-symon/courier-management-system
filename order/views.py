@@ -40,11 +40,17 @@ class OrderViewSet(viewsets.ModelViewSet):
     def update(self, request, *args, **kwargs):
         order = self.get_object()
 
+        # Delivery man: only update their assigned order
         if request.user.role == 'delivery_man':
             if order.delivery_man != request.user:
-                return Response({"detail": "Not allowed to update this order."}, status=status.HTTP_403_FORBIDDEN)
+                return Response({
+                    "success": False,
+                    "message": "Unauthorized access.",
+                    "errorDetails": "You are not assigned to this order."
+                }, status=status.HTTP_403_FORBIDDEN)
             return super().update(request, *args, **kwargs)
 
+        # Admin: assign delivery man
         if request.user.role == 'admin':
             delivery_man_id = request.data.get("delivery_man_id")
             if delivery_man_id:
@@ -53,6 +59,20 @@ class OrderViewSet(viewsets.ModelViewSet):
                     order.delivery_man = delivery_man
                     order.save()
                 except User.DoesNotExist:
-                    return Response({"detail": "Invalid delivery man ID"}, status=status.HTTP_400_BAD_REQUEST)
+                    return Response({
+                        "success": False,
+                        "message": "Validation error occurred.",
+                        "errorDetails": {
+                            "field": "delivery_man_id",
+                            "message": "Invalid delivery man ID."
+                        }
+                    }, status=status.HTTP_400_BAD_REQUEST)
 
-        return super().update(request, *args, **kwargs)
+            return super().update(request, *args, **kwargs)
+
+        return Response({
+            "success": False,
+            "message": "Unauthorized access.",
+            "errorDetails": "You must be an admin or assigned delivery man to perform this action."
+        }, status=status.HTTP_403_FORBIDDEN)
+
