@@ -1,3 +1,11 @@
+name: Django CI
+
+on:
+  push:
+    branches: [ develop ]
+  pull_request:
+    branches: [ main, develop ]
+
 jobs:
   test:
     runs-on: ubuntu-latest
@@ -24,8 +32,3 @@ jobs:
       - name: Run migrations
         run: |
           python manage.py migrate
-
-#      - name: Run testsgit add .
-#git commit -m "Cleaned up commit and removed sensitive info"
-#        run: |
-#          python manage.py test
