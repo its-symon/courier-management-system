@@ -78,8 +78,10 @@ python manage.py createsuperuser
 python manage.py runserver
 ```
 
-## API Endpoint
+## ERD Diagram
+![Farmers Market Finder Demo](image.png)
 
+## API Endpoint
 ### Auth Endpoint
 | HTTP  | Endpoint            | Action                                  |
 | ----- |---------------------| --------------------------------------- |
