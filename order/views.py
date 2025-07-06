@@ -5,7 +5,8 @@ from .models import Order
 from .serializers import (
     OrderSerializer,
     OrderCreateSerializer,
-    OrderStatusUpdateSerializer
+    OrderStatusUpdateSerializer,
+    OrderWithPaymentSerializer
 )
 from accounts.models import User
 
@@ -16,22 +17,31 @@ class OrderViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         user = self.request.user
 
+        if not user.is_authenticated:
+            return Order.objects.none()
+
         if user.role == 'admin':
-            return Order.objects.all()
+            return Order.objects.all().select_related('payment')
         elif user.role == 'delivery_man':
-            return Order.objects.filter(delivery_man=user)
+            return Order.objects.filter(delivery_man=user).select_related('payment')
         else:
-            return Order.objects.filter(user=user)
+            return Order.objects.filter(user=user).select_related('payment')
 
     def get_serializer_class(self):
         user = self.request.user
         action = self.action
+
+        if not user.is_authenticated:
+            return OrderSerializer
 
         if action == 'create':
             return OrderCreateSerializer
         elif action in ['partial_update', 'update']:
             if user.role == 'delivery_man':
                 return OrderStatusUpdateSerializer
+        elif action in ['list', 'retrieve']:
+            return OrderWithPaymentSerializer
+
         return OrderSerializer
 
     def perform_create(self, serializer):
@@ -39,10 +49,17 @@ class OrderViewSet(viewsets.ModelViewSet):
 
     def update(self, request, *args, **kwargs):
         order = self.get_object()
+        user = request.user
 
-        # Delivery man: only update their assigned order
-        if request.user.role == 'delivery_man':
-            if order.delivery_man != request.user:
+        if not user.is_authenticated:
+            return Response({
+                "success": False,
+                "message": "Unauthorized access.",
+                "errorDetails": "Authentication credentials were not provided."
+            }, status=status.HTTP_401_UNAUTHORIZED)
+
+        if user.role == 'delivery_man':
+            if order.delivery_man != user:
                 return Response({
                     "success": False,
                     "message": "Unauthorized access.",
@@ -50,8 +67,7 @@ class OrderViewSet(viewsets.ModelViewSet):
                 }, status=status.HTTP_403_FORBIDDEN)
             return super().update(request, *args, **kwargs)
 
-        # Admin: assign delivery man
-        if request.user.role == 'admin':
+        if user.role == 'admin':
             delivery_man_id = request.data.get("delivery_man_id")
             if delivery_man_id:
                 try:
