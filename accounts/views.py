@@ -27,10 +27,20 @@ class RegisterView(APIView):
         if serializer.is_valid():
             user = serializer.save()
             return Response({
+                'success': True,
                 'message': 'User registered successfully',
                 'user': RegisterSerializer(user).data
             }, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+        field, error = next(iter(serializer.errors.items()))
+        return Response({
+            'success': False,
+            'message': 'Validation error occurred.',
+            'errorDetails': {
+                'field': field,
+                'message': error[0] if isinstance(error, list) else str(error)
+            }
+        }, status=status.HTTP_400_BAD_REQUEST)
 
 class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
     @classmethod
@@ -41,6 +51,29 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
 
 class LoginView(TokenObtainPairView):
     serializer_class = CustomTokenObtainPairSerializer
+
+    def post(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+
+        try:
+            serializer.is_valid(raise_exception=True)
+        except Exception as e:
+            return Response({
+                "success": False,
+                "statusCode": 401,
+                "message": "Invalid credentials",
+                "data": "null"
+            }, status=status.HTTP_401_UNAUTHORIZED)
+
+        return Response({
+            "success": True,
+            "statusCode": 200,
+            "message": "Login successful",
+            "data": {
+                "access": serializer.validated_data.get("access"),
+                "refresh": serializer.validated_data.get("refresh")
+            }
+        }, status=status.HTTP_200_OK)
 
 
 
