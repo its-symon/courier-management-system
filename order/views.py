@@ -5,7 +5,8 @@ from .models import Order
 from .serializers import (
     OrderSerializer,
     OrderCreateSerializer,
-    OrderStatusUpdateSerializer
+    OrderStatusUpdateSerializer,
+    OrderWithPaymentSerializer
 )
 from accounts.models import User
 
