@@ -158,3 +158,7 @@ SIMPLE_JWT = {
     'SLIDING_TOKEN_LIFETIME_LATE_USER': timedelta(days=30),
 }
 
+CSRF_TRUSTED_ORIGINS = [
+    'https://courier-management-system-kpvx.onrender.com/',
+]
+
