@@ -1,6 +1,7 @@
 from rest_framework import serializers
 from .models import Order
 from accounts.models import User
+from payment.serializers import PaymentSerializer
 
 class OrderSerializer(serializers.ModelSerializer):
     user = serializers.StringRelatedField(read_only=True)
@@ -16,8 +17,25 @@ class OrderSerializer(serializers.ModelSerializer):
             'delivery_address',
             'package_details',
             'status',
+            'delivery_cost',
+            'payment_status',
             'created_at',
             'updated_at',
+        ]
+        read_only_fields = ['id', 'user', 'delivery_man', 'status', 'payment_status', 'created_at', 'updated_at']
+
+
+class OrderWithPaymentSerializer(serializers.ModelSerializer):
+    user = serializers.StringRelatedField(read_only=True)
+    delivery_man = serializers.StringRelatedField(read_only=True)
+    payment = PaymentSerializer(read_only=True)
+
+    class Meta:
+        model = Order
+        fields = [
+            'id', 'user', 'delivery_man', 'pickup_address',
+            'delivery_address', 'package_details', 'status',
+            'created_at', 'updated_at', 'payment'
         ]
         read_only_fields = ['id', 'user', 'delivery_man', 'status', 'created_at', 'updated_at']
 
@@ -25,7 +43,7 @@ class OrderSerializer(serializers.ModelSerializer):
 class OrderCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model = Order
-        fields = ['pickup_address', 'delivery_address', 'package_details']
+        fields = ['pickup_address', 'delivery_address', 'package_details', 'delivery_cost']
 
 # Admin Assign Delivery Man
 class AdminAssignDeliverySerializer(serializers.ModelSerializer):

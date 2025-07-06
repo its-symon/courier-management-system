@@ -20,11 +20,11 @@ class OrderViewSet(viewsets.ModelViewSet):
             return Order.objects.none()
 
         if user.role == 'admin':
-            return Order.objects.all()
+            return Order.objects.all().select_related('payment')
         elif user.role == 'delivery_man':
-            return Order.objects.filter(delivery_man=user)
+            return Order.objects.filter(delivery_man=user).select_related('payment')
         else:
-            return Order.objects.filter(user=user)
+            return Order.objects.filter(user=user).select_related('payment')
 
     def get_serializer_class(self):
         user = self.request.user
@@ -38,6 +38,8 @@ class OrderViewSet(viewsets.ModelViewSet):
         elif action in ['partial_update', 'update']:
             if user.role == 'delivery_man':
                 return OrderStatusUpdateSerializer
+        elif action in ['list', 'retrieve']:
+            return OrderWithPaymentSerializer
 
         return OrderSerializer
 
